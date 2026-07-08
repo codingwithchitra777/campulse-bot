@@ -1,18 +1,18 @@
 [project]
 name = "campulse-bot"
 version = "1.0.0"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12"
 dependencies = [
-    "python-dotenv==1.0.1",
-    "requests==2.32.3",
-    "cachetools==5.5.0",
-    "python-telegram-bot[job-queue]==21.6",
-    "pydantic==2.8.2",
-    "matplotlib==3.8.4",
-    "pytz==2024.1",
-    "aiohttp==3.9.1",
-    "psycopg2-binary==2.9.9",
-    "logfire==4.37.0",
+    "python-dotenv",
+    "requests",
+    "cachetools",
+    "python-telegram-bot[job-queue]",
+    "pydantic",
+    "matplotlib",
+    "pytz",
+    "aiohttp",
+    "psycopg2-binary",
+    "logfire",
 ]
 
 [tool.uv]
