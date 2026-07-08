@@ -139,7 +139,7 @@ class CsxTradingBot:
         self.user_repo.upsert_user(uid, update.effective_user.full_name, chat_id=update.effective_chat.id)
         
         await update.message.reply_text(
-            "🚀 Trading Journal ✅\n\n"
+            "🚀 CamPulse ✅\n\n"
             "📊 /price$ABC or /show_all\n"
             "💼 /buy$ABC 7300 100\n"
             "💼 /sell$ABC 7400 100\n"
