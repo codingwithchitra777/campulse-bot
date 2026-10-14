@@ -5,6 +5,7 @@ Standard OOP Refactor
 
 from __future__ import annotations
 
+import asyncio
 import io
 import uuid
 import logging
@@ -14,7 +15,8 @@ from typing import Optional, Tuple, List
 
 import pytz
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.constants import ChatAction
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from app.core.config import settings
 from app.repositories.trade import TradeRepository
@@ -23,6 +25,7 @@ from app.repositories.user import UserRepository
 from app.services.lifo_matcher import LifoMatcherService
 from app.services.pricing import PricingService
 from app.services.portfolio import PortfolioService
+from app.services.transcriber import KhmerTranscriber
 from app.utils.chart_renderer import ChartRenderer
 from app.utils.theme import Theme
 
@@ -92,6 +95,7 @@ class CsxTradingBot:
         self.portfolio = PortfolioService(self.trade_repo, self.alloc_repo, self.pricing)
         self.renderer = ChartRenderer(tz_name="Asia/Phnom_Penh")
         self.parser = CommandParser()
+        self.transcriber = KhmerTranscriber()
         self.tz = pytz.timezone("Asia/Phnom_Penh")
 
     def build_app(self) -> Application:
@@ -113,6 +117,7 @@ class CsxTradingBot:
         app.add_handler(CommandHandler("show_all", self.show_all_cmd))
         app.add_handler(CommandHandler("top_orders", self.top_orders_cmd))
         app.add_handler(CommandHandler("top_tickers", self.top_tickers_cmd))
+        app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, self.voice_msg))
 
     def _schedule_jobs(self, app: Application):
         """Internal method to set up cron jobs."""
@@ -132,6 +137,19 @@ class CsxTradingBot:
         return int(price * qty * self.COMMISSION_RATE)
 
     # --- Handlers ---
+
+    async def voice_msg(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Transcribe Khmer voice/audio messages and reply with the text."""
+        media = update.message.voice or update.message.audio
+        await update.message.reply_chat_action(ChatAction.TYPING)
+        try:
+            tg_file = await media.get_file()
+            data = bytes(await tg_file.download_as_bytearray())
+            text = await asyncio.to_thread(self.transcriber.transcribe, data)
+            await update.message.reply_text((text or "🤷 No speech detected")[:4096], do_quote=True)
+        except Exception as e:
+            logger.exception(e)
+            await update.message.reply_text("❌ Could not transcribe this voice message")
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = self._user_id(update)
